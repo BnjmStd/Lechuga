@@ -9,12 +9,16 @@ async function main() {
       usuario: {
         create: {
           email: 'paciente2@example.com',
-          telephone: '987654321',
-          firstName: 'María',
-          lastName: 'González',
           password: 'contraseña2',
           tipoUsuario: 'PACIENTE',
-          age: 18,
+          contact: {
+            create: {
+              telephone: '321321321',
+              firstName: 'Ana',
+              lastName: 'López',
+              age: 21,
+            },
+          },
         },
       },
       historialMedico: {
@@ -43,12 +47,16 @@ async function main() {
       usuario: {
         create: {
           email: 'medico1@example.com',
-          telephone: '456789123',
-          firstName: 'Dr. Luis',
-          lastName: 'Martínez',
           password: 'contraseña3',
           tipoUsuario: 'MEDICO',
-          age: 19,
+          contact: {
+            create: {
+              telephone: '321321321',
+              firstName: 'Ana',
+              lastName: 'López',
+              age: 21,
+            },
+          },
         },
       },
       prestaciones: {
@@ -132,15 +140,137 @@ async function main() {
       usuario: {
         create: {
           email: 'admin1@example.com',
-          telephone: '321321321',
-          firstName: 'Ana',
-          lastName: 'López',
           password: 'contraseña4',
           tipoUsuario: 'ADMINISTRADOR',
-          age: 21,
+          contact: {
+            create: {
+              telephone: '321321321',
+              firstName: 'Ana',
+              lastName: 'López',
+              age: 21,
+            },
+          },
         },
       },
     },
+  });
+
+  // Crear categorías
+  const categorias = await prisma.categorias.createMany({
+    data: [
+      {
+        name: "Antibióticos",
+        descripcion: "Medicamentos usados para tratar infecciones bacterianas.",
+        tipoCategoria: "Farmacológico",
+        codigo: "AB001",
+      },
+      {
+        name: "Analgésicos",
+        descripcion: "Medicamentos utilizados para aliviar el dolor.",
+        tipoCategoria: "Farmacológico",
+        codigo: "AN002",
+      },
+      {
+        name: "Antiinflamatorios",
+        descripcion: "Medicamentos que reducen la inflamación.",
+        tipoCategoria: "Farmacológico",
+        codigo: "AI003",
+      },
+      {
+        name: "Antidepresivos",
+        descripcion: "Medicamentos utilizados para tratar la depresión.",
+        tipoCategoria: "Psiquiátrico",
+        codigo: "AD004",
+      },
+    ],
+  });
+
+  console.log("Categorías creadas:", categorias);
+
+  // medicamentos
+  const medicamentos = await prisma.medicamento.createMany({
+    data: [
+      {
+        name: "Amoxicilina",
+        dosis: "500 mg cada 8 horas",
+        tipo: "Antibiótico",
+        descripcion: "Utilizado para tratar diversas infecciones bacterianas.",
+        efectosSecundarios: "Náuseas, erupciones cutáneas.",
+        contraindicaciones: "Alergia a la penicilina.",
+      },
+      {
+        name: "Ibuprofeno",
+        dosis: "400 mg cada 6 horas",
+        tipo: "Analgésico",
+        descripcion: "Usado para aliviar el dolor y reducir la inflamación.",
+        efectosSecundarios: "Malestar estomacal, mareos.",
+        contraindicaciones: "Úlceras gástricas.",
+      },
+      {
+        name: "Paracetamol",
+        dosis: "500 mg cada 8 horas",
+        tipo: "Analgésico",
+        descripcion: "Medicamento común para el alivio del dolor.",
+        efectosSecundarios: "Pocas reacciones adversas, generalmente seguro.",
+        contraindicaciones: "Enfermedades hepáticas severas.",
+      },
+      {
+        name: "Sertralina",
+        dosis: "50 mg una vez al día",
+        tipo: "Antidepresivo",
+        descripcion: "Usado para tratar trastornos depresivos y de ansiedad.",
+        efectosSecundarios: "Náuseas, insomnio.",
+        contraindicaciones: "Alergias a inhibidores selectivos de la recaptación de serotonina.",
+      },
+    ],
+  });
+
+  console.log("Medicamentos creados:", medicamentos);
+
+  // analitos
+  const analitos = await prisma.analito.createMany({
+    data: [
+      {
+        nombre: "Glucosa",
+        unidades: "mg/dL",
+        rangoNormal: "70-100",
+      },
+      {
+        nombre: "Colesterol Total",
+        unidades: "mg/dL",
+        rangoNormal: "125-200",
+      },
+      {
+        nombre: "Triglicéridos",
+        unidades: "mg/dL",
+        rangoNormal: "50-150",
+      },
+      {
+        nombre: "HDL (Colesterol Bueno)",
+        unidades: "mg/dL",
+        rangoNormal: "40-60",
+      },
+      {
+        nombre: "LDL (Colesterol Malo)",
+        unidades: "mg/dL",
+        rangoNormal: "<130",
+      },
+      {
+        nombre: "Creatinina",
+        unidades: "mg/dL",
+        rangoNormal: "0.6-1.2",
+      },
+      {
+        nombre: "Bilirrubina Total",
+        unidades: "mg/dL",
+        rangoNormal: "0.1-1.2",
+      },
+      {
+        nombre: "Ácido Úrico",
+        unidades: "mg/dL",
+        rangoNormal: "3.5-7.2",
+      },
+    ],
   });
 
   console.log({ paciente1, medico1, exam1, entidad1, administrador1 });

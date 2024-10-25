@@ -2,8 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { MedicalHistoryService } from './medical-history.service';
 import { CreateMedicalHistoryDto } from './dto/create-medical-history.dto';
 import { UpdateMedicalHistoryDto } from './dto/update-medical-history.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('history')
+@ApiTags("Antecedentes Médicos")
 export class MedicalHistoryController {
   
   constructor(

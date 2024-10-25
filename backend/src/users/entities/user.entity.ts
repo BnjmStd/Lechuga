@@ -22,4 +22,14 @@ export class UsersEntity implements UserWithoutPassword {
     id: number;
     @ApiProperty()
     tipoUsuario: $Enums.TipoUsuario;
+    @ApiProperty()
+    address: string;
+    @ApiProperty()
+    age: number;
+    @ApiProperty()
+    avatarImg: string;
+    @ApiProperty()
+    rut: string;
+    @ApiProperty()
+    contactId: number;
 }

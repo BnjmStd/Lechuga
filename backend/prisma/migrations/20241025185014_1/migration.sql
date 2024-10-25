@@ -11,19 +11,27 @@ CREATE TYPE "TipoEntidad" AS ENUM ('PUBLICO', 'PRIVADO');
 CREATE TABLE "Usuario" (
     "id" SERIAL NOT NULL,
     "email" VARCHAR(100) NOT NULL,
-    "telephone" TEXT,
-    "address" TEXT,
-    "firstName" TEXT NOT NULL,
-    "age" INTEGER NOT NULL,
-    "lastName" TEXT,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated" TIMESTAMP(3) NOT NULL,
     "password" TEXT NOT NULL,
     "avatarImg" TEXT,
-    "rut" TEXT,
     "tipoUsuario" "TipoUsuario" NOT NULL,
+    "contactId" INTEGER,
 
     CONSTRAINT "Usuario_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Contact" (
+    "id" SERIAL NOT NULL,
+    "rut" TEXT,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT,
+    "telephone" TEXT,
+    "address" TEXT,
+    "age" INTEGER,
+
+    CONSTRAINT "Contact_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -47,6 +55,43 @@ CREATE TABLE "MedicalHistory" (
 );
 
 -- CreateTable
+CREATE TABLE "Medicamento" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "dosis" TEXT NOT NULL,
+    "tipo" TEXT NOT NULL,
+    "descripcion" TEXT,
+    "efectosSecundarios" TEXT,
+    "contraindicaciones" TEXT,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Medicamento_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Categorias" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "descripcion" TEXT,
+    "tipoCategoria" TEXT NOT NULL,
+    "codigo" TEXT,
+    "fechaCreacion" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Categorias_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Indication" (
+    "id" SERIAL NOT NULL,
+    "texto" TEXT NOT NULL,
+    "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Indication_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Exam" (
     "id" SERIAL NOT NULL,
     "nombre" TEXT NOT NULL,
@@ -57,6 +102,26 @@ CREATE TABLE "Exam" (
     "pacienteId" INTEGER NOT NULL,
 
     CONSTRAINT "Exam_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Analito" (
+    "id" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
+    "unidades" TEXT NOT NULL,
+    "rangoNormal" TEXT,
+
+    CONSTRAINT "Analito_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ResultadoExamen" (
+    "id" SERIAL NOT NULL,
+    "valor" DOUBLE PRECISION NOT NULL,
+    "examenId" INTEGER NOT NULL,
+    "analitoId" INTEGER NOT NULL,
+
+    CONSTRAINT "ResultadoExamen_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -129,8 +194,32 @@ CREATE TABLE "Administrador" (
     CONSTRAINT "Administrador_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_MedicalHistoryMedicamentos" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "_MedicamentoCategoria" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "_MedicalHistoryIndications" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Usuario_email_key" ON "Usuario"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Usuario_contactId_key" ON "Usuario"("contactId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Contact_rut_key" ON "Contact"("rut");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Paciente_usuarioId_key" ON "Paciente"("usuarioId");
@@ -141,6 +230,27 @@ CREATE UNIQUE INDEX "Medico_usuarioId_key" ON "Medico"("usuarioId");
 -- CreateIndex
 CREATE UNIQUE INDEX "Administrador_usuarioId_key" ON "Administrador"("usuarioId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "_MedicalHistoryMedicamentos_AB_unique" ON "_MedicalHistoryMedicamentos"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_MedicalHistoryMedicamentos_B_index" ON "_MedicalHistoryMedicamentos"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_MedicamentoCategoria_AB_unique" ON "_MedicamentoCategoria"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_MedicamentoCategoria_B_index" ON "_MedicamentoCategoria"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_MedicalHistoryIndications_AB_unique" ON "_MedicalHistoryIndications"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_MedicalHistoryIndications_B_index" ON "_MedicalHistoryIndications"("B");
+
+-- AddForeignKey
+ALTER TABLE "Usuario" ADD CONSTRAINT "Usuario_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "Contact"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "Paciente" ADD CONSTRAINT "Paciente_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -149,6 +259,12 @@ ALTER TABLE "MedicalHistory" ADD CONSTRAINT "MedicalHistory_pacienteId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "Exam" ADD CONSTRAINT "Exam_pacienteId_fkey" FOREIGN KEY ("pacienteId") REFERENCES "Paciente"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ResultadoExamen" ADD CONSTRAINT "ResultadoExamen_examenId_fkey" FOREIGN KEY ("examenId") REFERENCES "Exam"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ResultadoExamen" ADD CONSTRAINT "ResultadoExamen_analitoId_fkey" FOREIGN KEY ("analitoId") REFERENCES "Analito"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Medico" ADD CONSTRAINT "Medico_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -173,3 +289,21 @@ ALTER TABLE "PrestacionEntidad" ADD CONSTRAINT "PrestacionEntidad_pacienteId_fke
 
 -- AddForeignKey
 ALTER TABLE "Administrador" ADD CONSTRAINT "Administrador_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_MedicalHistoryMedicamentos" ADD CONSTRAINT "_MedicalHistoryMedicamentos_A_fkey" FOREIGN KEY ("A") REFERENCES "MedicalHistory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_MedicalHistoryMedicamentos" ADD CONSTRAINT "_MedicalHistoryMedicamentos_B_fkey" FOREIGN KEY ("B") REFERENCES "Medicamento"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_MedicamentoCategoria" ADD CONSTRAINT "_MedicamentoCategoria_A_fkey" FOREIGN KEY ("A") REFERENCES "Categorias"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_MedicamentoCategoria" ADD CONSTRAINT "_MedicamentoCategoria_B_fkey" FOREIGN KEY ("B") REFERENCES "Medicamento"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_MedicalHistoryIndications" ADD CONSTRAINT "_MedicalHistoryIndications_A_fkey" FOREIGN KEY ("A") REFERENCES "Indication"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_MedicalHistoryIndications" ADD CONSTRAINT "_MedicalHistoryIndications_B_fkey" FOREIGN KEY ("B") REFERENCES "MedicalHistory"("id") ON DELETE CASCADE ON UPDATE CASCADE;

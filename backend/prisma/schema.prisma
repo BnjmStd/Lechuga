@@ -8,23 +8,32 @@ datasource db {
 }
 
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique @db.VarChar(100)
-  telephone String?
-  address   String?
-  firstName String
-  age       Int
-  lastName  String?
-  createAt  DateTime @default(now())
-  updated   DateTime @updatedAt
-  password  String
-  avatarImg String? // Almacena la URL de la imagen
-  rut String?
-
+  id            Int         @id @default(autoincrement())
+  email         String      @unique @db.VarChar(100)
+  createAt      DateTime    @default(now())
+  updated       DateTime    @updatedAt
+  password      String
+  avatarImg     String?     
+  
   tipoUsuario   TipoUsuario
   paciente      Paciente?
   medico        Medico?
   administrador Administrador?
+
+  contact       Contact?    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId     Int?        @unique
+}
+
+model Contact {
+  id            Int         @id @default(autoincrement())
+  rut           String?     @unique
+  firstName     String
+  lastName      String?
+  telephone     String?
+  address       String?
+  age           Int?
+  
+  usuario       Usuario?    @relation
 }
 
 model Paciente {
@@ -44,6 +53,42 @@ model MedicalHistory {
   pacienteId  Int
   paciente    Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   updated     DateTime @updatedAt
+
+  medicamentos Medicamento[] @relation("MedicalHistoryMedicamentos")
+  
+  indicacionMedica Indication[] @relation("MedicalHistoryIndications")
+}
+
+model Medicamento {
+  id                Int                @id @default(autoincrement())
+  name              String             
+  dosis             String             
+  tipo              String             // Tipo de medicamento (e.g., Analgésico, Antibiótico)
+  descripcion       String?            
+  efectosSecundarios String?           
+  contraindicaciones String?           
+  updated           DateTime           @updatedAt
+  medicalHistories  MedicalHistory[]   @relation("MedicalHistoryMedicamentos")
+  categorias        Categorias[]       @relation("MedicamentoCategoria")
+}
+
+model Categorias {
+  id              Int                @id @default(autoincrement())
+  name            String             
+  descripcion     String?            
+  tipoCategoria   String             
+  codigo          String?            
+  fechaCreacion   DateTime           @default(now()) 
+  updated         DateTime           @updatedAt
+  medicamentos    Medicamento[]      @relation("MedicamentoCategoria")
+}
+
+model Indication {
+  id              Int               @id @default(autoincrement())
+  texto           String            
+  fecha           DateTime @default(now()) 
+  updated       DateTime    @updatedAt
+  medicalHistories MedicalHistory[] @relation("MedicalHistoryIndications")
 }
 
 model Exam {
@@ -56,6 +101,25 @@ model Exam {
   pacienteId   Int
   paciente     Paciente            @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   prestaciones PrestacionEntidad[]
+  resultados  ResultadoExamen[] 
+}
+
+
+model Analito {
+  id          Int              @id @default(autoincrement())
+  nombre      String           // Nombre del analito, e.g., Glucosa, Colesterol
+  unidades    String           // Unidades de medida, e.g., mg/dL, mmol/L
+  rangoNormal String?          // Rango normal de valores para referencia
+  resultados  ResultadoExamen[]
+}
+
+model ResultadoExamen {
+  id        Int      @id @default(autoincrement())
+  valor     Float    // Valor del analito medido
+  examen    Exam   @relation(fields: [examenId], references: [id], onDelete: Cascade)
+  examenId  Int
+  analito   Analito  @relation(fields: [analitoId], references: [id])
+  analitoId Int
 }
 
 // Medico: Representa a los médicos, con su especialidad y relación con un usuario.
