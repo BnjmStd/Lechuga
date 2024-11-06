@@ -7,199 +7,277 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  id            Int         @id @default(autoincrement())
-  email         String      @unique @db.VarChar(100)
-  createAt      DateTime    @default(now())
-  updated       DateTime    @updatedAt
-  password      String
-  avatarImg     String?     
-  
-  tipoUsuario   TipoUsuario
-  paciente      Paciente?
-  medico        Medico?
-  administrador Administrador?
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(100)
+  createAt  DateTime @default(now())
+  updated   DateTime @updatedAt
+  password  String
+  avatarImg String?
 
-  contact       Contact?    @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  contactId     Int?        @unique
+  userType UserType
+  paciente Patient?
+  doctor   Doctor?
+  admin    Admin?
+
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId Int?     @unique
 }
 
 model Contact {
-  id            Int         @id @default(autoincrement())
-  rut           String?     @unique
-  firstName     String
-  lastName      String?
-  telephone     String?
-  address       String?
-  age           Int?
-  
-  usuario       Usuario?    @relation
+  id        Int     @id @default(autoincrement())
+  rut       String? @unique
+  firstName String
+  lastName  String?
+  telephone String?
+  address   String?
+  age       Int?
+
+  user User? @relation
 }
 
-model Paciente {
-  id              Int                 @id @default(autoincrement())
-  usuario         Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  usuarioId       Int                 @unique
-  updated         DateTime            @updatedAt
-  historialMedico MedicalHistory[] // Relación con la tabla Historial
-  exams           Exam[] // Relación uno a muchos con Exam
-  prestaciones    PrestacionEntidad[]
+model Patient {
+  id             Int              @id @default(autoincrement())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int              @unique
+  updated        DateTime         @updatedAt
+  medicalHistory MedicalHistory[] // Relación con la tabla Historial
+  exams          Exam[] // Relación uno a muchos con Exam
+  prestaciones   ServiceEntity[]
+
+  // New attributes:
+  gender              Gender? // Género del paciente (puede ser opcional)
+  currentWeight       Float? // Peso actual de la paciente en kilogramos.
+  currentHeight       Float? // Altura actual de la paciente en metros¿.
+  weightHeightHistory WeightHeightHistory[] // Relación de uno a muchos para el historial de peso y altura
+  previousDiagnoses   String? // Diagnósticos o condiciones anteriores como texto descriptivo o JSON
+}
+
+model WeightHeightHistory {
+  id         Int      @id @default(autoincrement())
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId  Int
+  weight     Float // Peso del paciente 
+  height     Float // altura paciente
+  recordDate DateTime // Fecha del registro de peso y altura
 }
 
 model MedicalHistory {
-  id          Int      @id @default(autoincrement())
-  descripcion String   @db.Text // Texto del historial médico
-  fecha       DateTime @default(now()) // Fecha de la entrada
-  pacienteId  Int
-  paciente    Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  updated     DateTime @updatedAt
+  id          Int      @id @default(autoincrement()) // Identificador único
+  description String   @db.Text // Descripción del historial médico
+  date        DateTime @default(now()) // Fecha de la entrada en el historial
+  patientId   Int // ID del paciente relacionado
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade) // Relación con el paciente, con eliminación en cascada
 
-  medicamentos Medicamento[] @relation("MedicalHistoryMedicamentos")
-  
-  indicacionMedica Indication[] @relation("MedicalHistoryIndications")
-}
 
-model Medicamento {
-  id                Int                @id @default(autoincrement())
-  name              String             
-  dosis             String             
-  tipo              String             // Tipo de medicamento (e.g., Analgésico, Antibiótico)
-  descripcion       String?            
-  efectosSecundarios String?           
-  contraindicaciones String?           
-  updated           DateTime           @updatedAt
-  medicalHistories  MedicalHistory[]   @relation("MedicalHistoryMedicamentos")
-  categorias        Categorias[]       @relation("MedicamentoCategoria")
-}
 
-model Categorias {
-  id              Int                @id @default(autoincrement())
-  name            String             
-  descripcion     String?            
-  tipoCategoria   String             
-  codigo          String?            
-  fechaCreacion   DateTime           @default(now()) 
-  updated         DateTime           @updatedAt
-  medicamentos    Medicamento[]      @relation("MedicamentoCategoria")
+  updatedAt DateTime @updatedAt // Fecha de la última actualización
+  createdAt DateTime @default(now())
+
+  medicines          Medicine[]   @relation("MedicalHistoryMedicamentos") // Relación con medicamentos (muchos a muchos)
+  medicalIndications  Indication[]
 }
 
 model Indication {
-  id              Int               @id @default(autoincrement())
-  texto           String            
-  fecha           DateTime @default(now()) 
-  updated       DateTime    @updatedAt
-  medicalHistories MedicalHistory[] @relation("MedicalHistoryIndications")
+  id        Int      @id @default(autoincrement())
+  historyId Int      @unique
+  texto     String
+  fecha     DateTime @default(now())
+  updated   DateTime @updatedAt
+
+  //medicines Medicine[]       // ID del historial médico al que pertenece la indicación
+  history        MedicalHistory @relation(fields: [historyId], references: [id], onDelete: Cascade) // Relación con el historial médico (uno a muchos)
+}
+
+model Medicine {
+  id                Int     @id @default(autoincrement())
+  name              String
+  dosage            String // Dosis del medicamento
+  type              String // Tipo de medicamento (e.g., Analgésico, Antibiótico)
+  description       String? // Descripción del medicamento
+  sideEffects       String? // Efectos secundarios
+  contraindications String? // Contraindicaciones
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  medicalHistories MedicalHistory[]   @relation("MedicalHistoryMedicamentos")
+  categorys        MedicineCategory[]
+}
+
+model Category {
+  id           Int      @id @default(autoincrement()) // Identificador único
+  name         String // Nombre de la categoría
+  description  String? // Descripción de la categoría (opcional)
+  categoryType String // Tipo de categoría (e.g., Medicamento, Suplemento)
+  code         String? // Código de la categoría (opcional)
+  createdAt    DateTime @default(now()) // Fecha de creación
+  updatedAt    DateTime @updatedAt // Fecha de la última actualización
+
+  medicines MedicineCategory[] // Relación muchos a muchos con Medicamentos
+}
+
+model MedicineCategory {
+  medicineId Int
+  categoryId Int
+
+  medicine Medicine @relation(fields: [medicineId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([medicineId, categoryId])
 }
 
 model Exam {
-  id           Int                 @id @default(autoincrement())
-  nombre       String
-  numero_orden Int
-  contenido    String              @db.Text
-  updated      DateTime            @updatedAt
-  format       FormatExam
-  pacienteId   Int
-  paciente     Paciente            @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  prestaciones PrestacionEntidad[]
-  resultados  ResultadoExamen[] 
+  id          Int             @id @default(autoincrement())
+  name        String
+  orderNumber Int
+  content     String          @db.Text // contenido binario
+  format      FormatExam
+  patientId   Int
+  patient     Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  benefit     ServiceEntity[] // prestación médica 
+  result      ExamResult[]
+
+  // Relación con el laboratorio:
+  laboratoryId Int? // ID del laboratorio
+  laboratory   Laboratory? @relation(fields: [laboratoryId], references: [id])
+
+  // Nuevos campos para fechas y otros detalles
+  sampleDate    DateTime? // fecha de toma de muestra
+  receptionDate DateTime? // fecha de recepción
+  printDate     DateTime? // fecha de impresión (opcional)
+
+  createdAt DateTime @default(now()) // fecha de creación
+  updatedAt DateTime @updatedAt
+
+  requestingDoctorId    Int? // médico solicitante (si aplica)
+  requestingDoctor      Doctor? @relation(fields: [requestingDoctorId], references: [id]) // Relación opcional con la tabla Doctor
+  sampleType            String? // tipo de muestra
+  examMethod            String? // método de examen (opcional)
+  equipment             String? // equipo utilizado (opcional)
+  responsibleTechnician String? // técnico responsable (opcional, podría estar relacionado con el laboratorio)
 }
 
+// tabla laboratorio
+model Laboratory {
+  id          Int    @id @default(autoincrement())
+  name        String // nombre del laboratorio
+  address     String // dirección del laboratorio
+  contactInfo String // información de contacto del laboratorio
 
-model Analito {
-  id          Int              @id @default(autoincrement())
-  nombre      String           // Nombre del analito, e.g., Glucosa, Colesterol
-  unidades    String           // Unidades de medida, e.g., mg/dL, mmol/L
-  rangoNormal String?          // Rango normal de valores para referencia
-  resultados  ResultadoExamen[]
+  exams Exam[] // Relación uno a muchos con Exam
 }
 
-model ResultadoExamen {
-  id        Int      @id @default(autoincrement())
-  valor     Float    // Valor del analito medido
-  examen    Exam   @relation(fields: [examenId], references: [id], onDelete: Cascade)
-  examenId  Int
-  analito   Analito  @relation(fields: [analitoId], references: [id])
+model Analyte {
+  id          Int          @id @default(autoincrement())
+  parameter   String // Nombre del analito, e.g., Glucosa, Colesterol
+  units       String // Unidades de medida, e.g., mg/dL, mmol/L
+  normalRange String? // Rango normal de valores para referencia
+  results     ExamResult[] // Relación con ResultadoExamen
+  value       String?
+}
+
+model ExamResult {
+  id    Int   @id @default(autoincrement())
+  valor Float // Valor del analito medido
+
+  examen   Exam @relation(fields: [examenId], references: [id], onDelete: Cascade)
+  examenId Int
+
+  analito   Analyte @relation(fields: [analitoId], references: [id])
   analitoId Int
 }
 
 // Medico: Representa a los médicos, con su especialidad y relación con un usuario.
-model Medico {
-  id           Int                 @id @default(autoincrement())
-  especialidad String              @db.VarChar(100)
-  usuarioId    Int                 @unique
-  usuario      Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  prestaciones PrestacionEntidad[]
-  updated      DateTime            @updatedAt
+model Doctor {
+  id           Int             @id @default(autoincrement())
+  especialidad String          @db.VarChar(100)
+  usuarioId    Int             @unique
+  usuario      User            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  prestaciones ServiceEntity[]
+  updated      DateTime        @updatedAt
+
+  exam Exam[]
+  // analito
 }
 
-// Prestacion: Define las prestaciones médicas (servicios) que pueden ofrecerse.
-model Prestacion {
+// MedicalService: Define the medical services (prestations) that can be offered.
+model MedicalService {
   id          Int      @id @default(autoincrement())
-  nombre      String
-  descripcion String?
-  cobertura   Float?
-  costo       Float?
-  updated     DateTime @updatedAt
+  name        String // Nombre del servicio médico
+  description String? // Descripción del servicio
+  coverage    Float? // Cobertura del servicio
+  cost        Float? // Costo del servicio
+  updatedAt   DateTime @updatedAt // Fecha de actualización
 
-  tipoPrestacionId Int
-  tipoPrestacion   TipoPrestacion @relation(fields: [tipoPrestacionId], references: [id], onDelete: Cascade)
+  serviceTypeId Int // ID del tipo de servicio
+  serviceType   ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade) // Relación con el tipo de servicio
 
-  entidades PrestacionEntidad[]
+  entities ServiceEntity[] // Relación con la tabla intermedia de entidades
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) // Fecha de creación
 }
 
-//TipoPrestacion: Clasifica las prestaciones en diferentes tipos (por ejemplo, consultas, cirugías).
-model TipoPrestacion {
-  id           Int          @id @default(autoincrement())
-  nombre       String
-  descripcion  String?
-  prestaciones Prestacion[]
+// ServiceType: Clasifica los servicios médicos en diferentes tipos (por ejemplo, consultas, cirugías).
+model ServiceType {
+  id          Int              @id @default(autoincrement())
+  name        String // Nombre del tipo de servicio
+  description String? // Descripción del tipo de servicio
+  services    MedicalService[] // Relación con los servicios
 
-  createdAt DateTime @default(now())
-  updated   DateTime @updatedAt
+  createdAt DateTime @default(now()) // Fecha de creación
+  updatedAt DateTime @updatedAt // Fecha de actualización
 }
 
-// Entidad: Representa las instituciones (públicas o privadas) que ofrecen las prestaciones
-model Entidad {
-  id           Int                 @id @default(autoincrement())
-  nombre       String
-  direccion    String?
-  telefono     String?
-  tipoEntidad  TipoEntidad
-  prestaciones PrestacionEntidad[]
+// Institución: Representa las instituciones (públicas o privadas) que ofrecen los servicios médicos.
+model HealthInstitution {
+  id              Int             @id @default(autoincrement())
+  name            String // Nombre de la institución
+  address         String? // Dirección de la institución
+  telephone       String? // Teléfono de la institución
+  institutionType InstitutionType // Tipo de institución (pública, privada, etc.)
+  services        ServiceEntity[] // Relación con la tabla intermedia de servicios
 
-  createdAt DateTime @default(now())
-  updated   DateTime @updatedAt
+  createdAt DateTime @default(now()) // Fecha de creación
+  updatedAt DateTime @updatedAt // Fecha de actualización
 }
 
-// PrestacionEntidad: Es una tabla intermedia que conecta médicos, prestaciones y entidades, para manejar las relaciones de muchos a muchos entre ellos.
-model PrestacionEntidad {
-  entidadId    Int
-  prestacionId Int
-  medicoId     Int?
-  examId       Int?
-  pacienteId   Int?
-  updated      DateTime @updatedAt
+// ServiceEntity: Tabla intermedia que conecta médicos, servicios e instituciones para gestionar relaciones de muchos a muchos entre ellos.
+model ServiceEntity {
+  institutionId Int
+  serviceId     Int
+  doctorId      Int?
+  examId        Int?
+  patientId     Int?
+  updatedAt     DateTime @updatedAt // Fecha de actualización
 
-  entidad    Entidad    @relation(fields: [entidadId], references: [id], onDelete: Cascade)
-  prestacion Prestacion @relation(fields: [prestacionId], references: [id], onDelete: Cascade)
-  medico     Medico?    @relation(fields: [medicoId], references: [id])
-  exam       Exam?      @relation(fields: [examId], references: [id])
-  paciente   Paciente?  @relation(fields: [pacienteId], references: [id])
+  institution HealthInstitution @relation(fields: [institutionId], references: [id], onDelete: Cascade) // Relación con la institución
+  service     MedicalService    @relation(fields: [serviceId], references: [id], onDelete: Cascade) // Relación con el servicio
+  doctor      Doctor?           @relation(fields: [doctorId], references: [id]) // Relación con el médico (opcional)
+  exam        Exam?             @relation(fields: [examId], references: [id]) // Relación con el examen (opcional)
+  patient     Patient?          @relation(fields: [patientId], references: [id]) // Relación con el paciente (opcional)
 
-  @@id([entidadId, prestacionId])
+  @@id([institutionId, serviceId]) // Clave primaria compuesta
 }
 
-model Administrador {
-  id           Int      @id @default(autoincrement())
-  departamento String   @db.VarChar(100)
-  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  usuarioId    Int      @unique
-  updated      DateTime @updatedAt
+model Admin {
+  id         Int      @id @default(autoincrement())
+  department String   @db.VarChar(100) // Departamento del administrador
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Relación con el usuario
+  userId     Int      @unique // ID único del usuario
+  updatedAt  DateTime @updatedAt // Fecha de actualización
 }
 
-enum TipoUsuario {
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserType {
   PACIENTE
   MEDICO
   ADMINISTRADOR
@@ -210,7 +288,7 @@ enum FormatExam {
   PDF
 }
 
-enum TipoEntidad {
+enum InstitutionType {
   PUBLICO
   PRIVADO
 }
