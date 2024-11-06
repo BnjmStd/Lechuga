@@ -243,7 +243,13 @@ async function main() {
     ],
   });
 
-  console.log({ paciente1, medico1, exam1, entidad1, administrador1 });
+  console.log({ 
+    paciente1, 
+    medico1, 
+    exam1, 
+    entidad1, 
+    administrador1 
+  });
 }
 
 main()

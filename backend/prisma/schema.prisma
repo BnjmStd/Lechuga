@@ -8,32 +8,36 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique @db.VarChar(100)
-  createAt  DateTime @default(now())
-  updated   DateTime @updatedAt
-  password  String
-  avatarImg String?
+  id       Int      @id @default(autoincrement()) // Identificador único del usuario, con incremento automático
+  email    String   @unique @db.VarChar(100) // Correo electrónico único, con un límite de 100 caracteres en la base de datos
+  createAt DateTime @default(now()) // Fecha de creación del usuario, con valor predeterminado de la fecha actual
+  updated  DateTime @updatedAt // Fecha de la última actualización del registro, actualizada automáticamente
 
-  userType UserType
-  paciente Patient?
-  doctor   Doctor?
-  admin    Admin?
+  password  String // Contraseña del usuario
+  avatarImg String? // Imagen de perfil o avatar del usuario, opcional
 
-  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  contactId Int?     @unique
+  userType UserType // Enum que define el tipo de usuario (puede ser admin, doctor, paciente, etc.)
+  paciente Patient? // Relación opcional con el modelo Patient (si el usuario es un paciente)
+  doctor   Doctor? // Relación opcional con el modelo Doctor (si el usuario es un doctor)
+  admin    Admin? // Relación opcional con el modelo Admin (si el usuario es un administrador)
+
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade) // Relación opcional con el modelo Contact; si se elimina el usuario, también se eliminará el contacto
+  contactId Int?     @unique // Identificador único para el contacto relacionado, opcional
 }
 
 model Contact {
-  id        Int     @id @default(autoincrement())
-  rut       String? @unique
-  firstName String
-  lastName  String?
-  telephone String?
-  address   String?
-  age       Int?
+  id        Int     @id @default(autoincrement()) // Identificador único
+  rut       String? @unique // RUT único para contacto (si aplica)
+  firstName String // Primer nombre
+  lastName  String? // Apellido opcional
+  telephone String? // Teléfono opcional
+  address   String? // Dirección opcional
+  age       Int? // Edad opcional
 
   user User? @relation
+
+  createdAt DateTime @default(now()) // Fecha de creación
+  updatedAt DateTime @updatedAt // Fecha de última actualización
 }
 
 model Patient {
@@ -46,20 +50,46 @@ model Patient {
   prestaciones   ServiceEntity[]
 
   // New attributes:
-  gender              Gender? // Género del paciente (puede ser opcional)
-  currentWeight       Float? // Peso actual de la paciente en kilogramos.
-  currentHeight       Float? // Altura actual de la paciente en metros¿.
-  weightHeightHistory WeightHeightHistory[] // Relación de uno a muchos para el historial de peso y altura
-  previousDiagnoses   String? // Diagnósticos o condiciones anteriores como texto descriptivo o JSON
+  gender                Gender? // Género del paciente (puede ser opcional)
+  currentWeight         Float? // Peso actual de la paciente en kilogramos.
+  currentHeight         Float? // Altura actual de la paciente en metros¿.
+  weightHeightHistory   HealthMetricsHistory[] // Relación de uno a muchos para el historial de peso y altura
+  medicalRecommendation MedicalRecommendation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model WeightHeightHistory {
-  id         Int      @id @default(autoincrement())
-  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId  Int
-  weight     Float // Peso del paciente 
-  height     Float // altura paciente
+model MedicalRecommendation {
+  // implementar lo de daniel de la tabla de recomendaciones medicas
+
+  id          Int      @id @default(autoincrement())
+  description String   @db.Text
+  name        String   @db.VarChar(100)
+  date        DateTime @default(now())
+  patientId   Int
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model HealthMetricsHistory {
+  id        Int     @id @default(autoincrement())
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId Int
+  weight    Float // Peso del paciente 
+  height    Float // altura paciente
+
   recordDate DateTime // Fecha del registro de peso y altura
+
+  imc    Float // Índice de masa corporal
+  fat    Float // Porcentaje de grasa corporal
+  muscle Float // Porcentaje de músculo
+  water  Float // Porcentaje de agua
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model MedicalHistory {
@@ -69,13 +99,24 @@ model MedicalHistory {
   patientId   Int // ID del paciente relacionado
   patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade) // Relación con el paciente, con eliminación en cascada
 
-
-
   updatedAt DateTime @updatedAt // Fecha de la última actualización
   createdAt DateTime @default(now())
 
-  medicines          Medicine[]   @relation("MedicalHistoryMedicamentos") // Relación con medicamentos (muchos a muchos)
-  medicalIndications  Indication[]
+  medicines          MedicalHistoryMedicine[]
+  medicalIndications Indication[]
+}
+
+model MedicalHistoryMedicine {
+  medicineId Int
+  historyId  Int
+
+  medicine Medicine       @relation(fields: [medicineId], references: [id])
+  history  MedicalHistory @relation(fields: [historyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([medicineId, historyId])
 }
 
 model Indication {
@@ -86,7 +127,7 @@ model Indication {
   updated   DateTime @updatedAt
 
   //medicines Medicine[]       // ID del historial médico al que pertenece la indicación
-  history        MedicalHistory @relation(fields: [historyId], references: [id], onDelete: Cascade) // Relación con el historial médico (uno a muchos)
+  history MedicalHistory @relation(fields: [historyId], references: [id], onDelete: Cascade) // Relación con el historial médico (uno a muchos)
 }
 
 model Medicine {
@@ -101,18 +142,19 @@ model Medicine {
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 
-  medicalHistories MedicalHistory[]   @relation("MedicalHistoryMedicamentos")
+  medicalHistories MedicalHistoryMedicine[]
   categorys        MedicineCategory[]
 }
 
 model Category {
-  id           Int      @id @default(autoincrement()) // Identificador único
+  id           Int     @id @default(autoincrement()) // Identificador único
   name         String // Nombre de la categoría
   description  String? // Descripción de la categoría (opcional)
   categoryType String // Tipo de categoría (e.g., Medicamento, Suplemento)
   code         String? // Código de la categoría (opcional)
-  createdAt    DateTime @default(now()) // Fecha de creación
-  updatedAt    DateTime @updatedAt // Fecha de la última actualización
+
+  createdAt DateTime @default(now()) // Fecha de creación
+  updatedAt DateTime @updatedAt // Fecha de la última actualización
 
   medicines MedicineCategory[] // Relación muchos a muchos con Medicamentos
 }
@@ -169,6 +211,9 @@ model Laboratory {
   contactInfo String // información de contacto del laboratorio
 
   exams Exam[] // Relación uno a muchos con Exam
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model Analyte {
@@ -178,6 +223,9 @@ model Analyte {
   normalRange String? // Rango normal de valores para referencia
   results     ExamResult[] // Relación con ResultadoExamen
   value       String?
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model ExamResult {
@@ -189,6 +237,9 @@ model ExamResult {
 
   analito   Analyte @relation(fields: [analitoId], references: [id])
   analitoId Int
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 // Medico: Representa a los médicos, con su especialidad y relación con un usuario.
@@ -201,7 +252,9 @@ model Doctor {
   updated      DateTime        @updatedAt
 
   exam Exam[]
-  // analito
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 // MedicalService: Define the medical services (prestations) that can be offered.
