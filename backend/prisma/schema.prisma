@@ -244,15 +244,24 @@ model ExamResult {
 
 // Medico: Representa a los médicos, con su especialidad y relación con un usuario.
 model Doctor {
-  id           Int             @id @default(autoincrement())
-  especialidad String          @db.VarChar(100)
-  usuarioId    Int             @unique
-  usuario      User            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  prestaciones ServiceEntity[]
-  updated      DateTime        @updatedAt
+  id              Int              @id @default(autoincrement())
+  specialtyId     Int // Foreign key to the MedicalSpecialty table
+  specialty       MedicalSpecialty @relation(fields: [specialtyId], references: [id]) // Relationship with MedicalSpecialty
+  userId          Int              @unique // Foreign key to the User table
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade) // Relationship with User
+  medicalServices ServiceEntity[] // Medical services provided by the doctor
+  exams           Exam[] // Exams performed by the doctor
+  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime         @default(now())
+}
 
-  exam Exam[]
+// MedicalSpecialty: Represents various medical specialties to classify doctors.
+model MedicalSpecialty {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(100) // Name of the medical specialty
+  description String? // Description of the specialty
 
+  doctors   Doctor[] // Relation to the Doctor model for assigning specialties
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
@@ -285,7 +294,7 @@ model ServiceType {
   updatedAt DateTime @updatedAt // Fecha de actualización
 }
 
-// Institución: Representa las instituciones (públicas o privadas) que ofrecen los servicios médicos.
+// Institución: Representa las instituciones (públicas o privadas) que ofrecen los servicios médicos. entity
 model HealthInstitution {
   id              Int             @id @default(autoincrement())
   name            String // Nombre de la institución
