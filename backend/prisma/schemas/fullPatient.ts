@@ -91,7 +91,7 @@ export default async function createFullPatient() {
             result: {
               create: [
                 {
-                  valor: 7.2,
+                  valor: 7.2, // modelo ExamResult: 
                   analito: {
                     create: {
                       parameter: 'Glucosa',
