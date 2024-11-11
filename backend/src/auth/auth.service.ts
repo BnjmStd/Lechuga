@@ -12,7 +12,7 @@ export class AuthService {
     ) {}
 
     async validateUser(user: LoginDto) {
-        const foundUser = await this.prisma.usuario.findUnique({
+        const foundUser = await this.prisma.user.findUnique({
             where: {
                 email: user.email
             }
@@ -36,7 +36,7 @@ export class AuthService {
     
         console.log(user);
     
-        const user1 = await this.prisma.usuario.create({
+        const user1 = await this.prisma.user.create({
             data: {
                 email: user.email, 
                 password: user.password,
@@ -46,7 +46,7 @@ export class AuthService {
                         age: user.age
                     }
                 },
-                tipoUsuario: 'PACIENTE', 
+                userType: 'PACIENTE', 
                 paciente: { 
                 },
             },

@@ -13,7 +13,6 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
-import { UsersEntity } from './entities/user.entity';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/interfaces/authenticated-user.interface';
 
@@ -37,9 +36,6 @@ export class UsersController {
   }
 
   @Get(':id')
-  @ApiCreatedResponse({
-    type: UsersEntity
-  })
   async findOne(@Param('id') id: string) {
     const userId = parseInt(id);
     console.log(userId)

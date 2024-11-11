@@ -11,7 +11,6 @@ import Analyte from './schemas/Analyte';
 const prisma = new PrismaClient();
 
 async function main() {
-
   Pacientes()
   MedicineCategory()
   ServicesIntitute()
@@ -19,8 +18,6 @@ async function main() {
   Doctor()
   Admin()
   Analyte()
-  
-
 }
 
 main()

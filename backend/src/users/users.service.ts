@@ -18,7 +18,7 @@ export class UsersService {
       paciente, medico, 
       administrador } = createUserDto;
 
-    const existingUser = await this.prisma.usuario.findUnique({
+    const existingUser = await this.prisma.user.findUnique({
       where: {
         email,
       },
@@ -70,17 +70,17 @@ export class UsersService {
         throw new Error('El tipo de usuario no es válido.');
     }
 
-    return this.prisma.usuario.create({
+    return this.prisma.user.create({
       data: userData,
     });
   }
 
   findAll() {
-    return this.prisma.usuario.findMany()
+    return this.prisma.user.findMany()
   }
 
   findOne(id: number) {
-    return this.prisma.usuario.findUnique({
+    return this.prisma.user.findUnique({
       where: { id }
     })
   }
