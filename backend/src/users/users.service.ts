@@ -10,12 +10,12 @@ export class UsersService {
   constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
-    
-    const { 
-      email, telephone, 
-      firstName, lastName, 
-      password, tipoUsuario, 
-      paciente, medico, 
+
+    const {
+      email, telephone,
+      firstName, lastName,
+      password, tipoUsuario,
+      paciente, medico,
       administrador } = createUserDto;
 
     const existingUser = await this.prisma.user.findUnique({
