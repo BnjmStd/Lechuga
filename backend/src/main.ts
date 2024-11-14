@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { 
-  SwaggerModule, 
-  DocumentBuilder 
+import {
+  SwaggerModule,
+  DocumentBuilder
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { ValidationPipe } from '@nestjs/common';
@@ -24,7 +24,7 @@ async function bootstrap() {
     })
     .addSecurityRequirements('bearer')
     .build();
-    
+
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
@@ -35,14 +35,13 @@ async function bootstrap() {
   const jwtAuthGuard = app.get(JwtAuthGuard)
   app.useGlobalGuards(jwtAuthGuard)
 
-    // Habilita la validación automática con ValidationPipe
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true,  // Elimina propiedades no definidas en el DTO
-      forbidNonWhitelisted: true,  // Lanza un error si hay propiedades no definidas
-      transform: true,  // Transforma los datos en el tipo correcto (basado en el DTO)
-    }));
+  // Habilita la validación automática con ValidationPipe
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,  // Elimina propiedades no definidas en el DTO
+    forbidNonWhitelisted: true,  // Lanza un error si hay propiedades no definidas
+    transform: true,  // Transforma los datos en el tipo correcto (basado en el DTO)
+  }));
 
-
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 4000);
 }
 bootstrap();

@@ -2,7 +2,7 @@
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
 -- CreateEnum
-CREATE TYPE "UserType" AS ENUM ('PACIENTE', 'MEDICO', 'ADMINISTRADOR');
+CREATE TYPE "UserType" AS ENUM ('PATIENT', 'DOCTOR', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "FormatExam" AS ENUM ('IMAGEN', 'PDF');

@@ -4,7 +4,6 @@ import { ExamsModule } from './exams/exams.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 
-
 @Module({
   imports: [
     UsersModule, 

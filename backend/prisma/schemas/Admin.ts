@@ -11,7 +11,7 @@ export default async function Admin() {
             create: {
               email: 'admin1@example.com',
               password: 'contraseña4',
-              userType: 'ADMINISTRADOR',
+              userType: 'ADMIN',
               contact: {
                 create: {
                   telephone: '321321321',

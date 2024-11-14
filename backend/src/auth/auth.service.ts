@@ -18,93 +18,102 @@ export class AuthService {
     ) { }
 
     async validateUser(user: LoginDto) {
+        try {
 
-        // encontrar el usuario en la base de datos
+            // encontrar el usuario en la base de datos
 
-        if (!this.validateEmail(user.email)) return { success: false, message: 'Invalid email' };
-        
-        const foundUser = await this.searchUserByEmail(user.email);
+            if (!this.validateEmail(user.email)) return { success: false, message: 'Invalid email' };
 
-        if (!foundUser) return { success: false, message: 'User not found' };;
+            const foundUser = await this.searchUserByEmail(user.email);
 
-        // validar que la contraseña sea correcta
+            if (!foundUser) return { success: false, message: 'User not found' };;
 
-        const passwordIsValid = await this.validatePasswordToken(user.password, foundUser.password);
+            // validar que la contraseña sea correcta
 
-        if (!passwordIsValid) return { success: false, message: 'Invalid password' };
+            const passwordIsValid = await this.validatePasswordToken(user.password, foundUser.password);
 
-        // generar un token de autenticación
+            if (!passwordIsValid) return { success: false, message: 'Invalid password' };
 
-        const token = this.generateToken({ id: foundUser.id, email: foundUser.email });
-        
-        return {
-            success: true,
-            token,
+            // generar un token de autenticación
+
+            const token = this.generateToken({ id: foundUser.id, email: foundUser.email });
+
+            return {
+                success: true,
+                token,
+            }
+            
+        } catch (error) {
+            throw new Error(error);
         }
     }
 
     async createUserSignUp(user: SignupDto) {
+        try {
 
-        // validar todos los campos del usuario
+            // validar todos los campos del usuario
 
-        if (!user.email || !user.password || !user.name || !user.age) return { success: false, message: 'Error in response body' };
+            if (!user.email || !user.password || !user.name || !user.age) return { success: false, message: 'Error in response body' };
 
-        if (user.password !== user.passwordConfirm) {
-            return { success: false, message: 'Passwords do not match' };
-        }
+            if (user.password !== user.passwordConfirm) {
+                return { success: false, message: 'Passwords do not match' };
+            }
 
-        if (!this.validateEmail(user.email)) {
-            return { success: false, message: 'Invalid email' };
-        }
+            if (!this.validateEmail(user.email)) {
+                return { success: false, message: 'Invalid email' };
+            }
 
-        if (!this.validPasswordRegex(user.password)) {
-            return { success: false, message: 'Password must meet requirements' };
-        }
+            if (!this.validPasswordRegex(user.password)) {
+                return { success: false, message: 'Password must meet requirements' };
+            }
 
-        // validar que el usuario no exista en la base de datos
-        const foundUser = await this.searchUserByEmail(user.email);
+            // validar que el usuario no exista en la base de datos
+            const foundUser = await this.searchUserByEmail(user.email);
 
-        if (foundUser) {
-            return { success: false, message: 'Already registered user' };
-        }
+            if (foundUser) {
+                return { success: false, message: 'Already registered user' };
+            }
 
-        const hashedPassword = await this.encryptPassword(user.password, parseInt(process.env.SALT_ROUNDS));
+            const hashedPassword = await this.encryptPassword(user.password, parseInt(process.env.SALT_ROUNDS));
 
-        // crear el usuario en la base de datos
+            // crear el usuario en la base de datos
 
-        const patient = await this.prisma.patient.create({
-            data: {
-                user: {
-                    create: {
-                        email: user.email,
-                        password: hashedPassword,
-                        userType: 'PACIENTE',
-                        contact: {
-                            create: {
-                                firstName: user.name,
-                                age: user.age,
+            const patient = await this.prisma.patient.create({
+                data: {
+                    user: {
+                        create: {
+                            email: user.email,
+                            password: hashedPassword,
+                            userType: 'PATIENT',
+                            contact: {
+                                create: {
+                                    firstName: user.name,
+                                    age: user.age,
+                                },
                             },
                         },
                     },
                 },
-            },
-            include: {
-                user: true,  // Incluye la relación `user` en el resultado
-            },
-        });
-
-        return {
-            success: true,
-            message: 'User registered in the database',
-            data: {
-                patient: {
-                    id: patient.id,
-                    email: patient.user.email,
-                    createdAt: patient.user.createAt,
-                    userType: patient.user.userType,
+                include: {
+                    user: true,  // Incluye la relación `user` en el resultado
                 },
-            },
-        };
+            });
+
+            return {
+                success: true,
+                message: 'User registered in the database',
+                data: {
+                    patient: {
+                        id: patient.id,
+                        email: patient.user.email,
+                        createdAt: patient.user.createAt,
+                        userType: patient.user.userType,
+                    },
+                },
+            };
+        } catch (error) {
+            throw new Error(error);
+        }
     }
 
     private async searchUserByEmail(email: string) {
@@ -142,7 +151,7 @@ export class AuthService {
         return bcrypt.hash(password, salt);
     }
 
-    private generateToken({ id, email}: {id: number, email: string}) {
+    private generateToken({ id, email }: { id: number, email: string }) {
         return this.jwtServices.sign(
             {
                 id: id,

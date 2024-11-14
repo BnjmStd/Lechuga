@@ -47,7 +47,7 @@ model Patient {
   updated        DateTime         @updatedAt
   medicalHistory MedicalHistory[] // Relación con la tabla Historial
   exams          Exam[] // Relación uno a muchos con Exam
-  prestaciones   ServiceEntity[]
+  services   ServiceEntity[]
 
   // New attributes:
   gender                Gender? // Género del paciente (puede ser opcional)
@@ -251,6 +251,7 @@ model Doctor {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade) // Relationship with User
   medicalServices ServiceEntity[] // Medical services provided by the doctor
   exams           Exam[] // Exams performed by the doctor
+  
   updatedAt       DateTime         @updatedAt
   createdAt       DateTime         @default(now())
 }
@@ -262,6 +263,7 @@ model MedicalSpecialty {
   description String? // Description of the specialty
 
   doctors   Doctor[] // Relation to the Doctor model for assigning specialties
+
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
@@ -340,9 +342,9 @@ enum Gender {
 }
 
 enum UserType {
-  PACIENTE
-  MEDICO
-  ADMINISTRADOR
+  PATIENT
+  DOCTOR
+  ADMIN
 }
 
 enum FormatExam {

@@ -8,7 +8,7 @@ export default async function Doctor() {
     data: {
       email: 'doctor@example.com',
       password: 'securePassword123',
-      userType: 'MEDICO',
+      userType: 'DOCTOR',
       contact: {
         create: {
           firstName: 'Doctor',

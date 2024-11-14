@@ -2,77 +2,122 @@ import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { TipoUsuario } from './dto/tipo-usuario.enum';
+
+import { UserType } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
 
   constructor(private prisma: PrismaService) { }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(user: CreateUserDto) {
 
-    const {
-      email, telephone,
-      firstName, lastName,
-      password, tipoUsuario,
-      paciente, medico,
-      administrador } = createUserDto;
-
-    const existingUser = await this.prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
-
-    if (existingUser) {
-      throw new Error('Ya existe un usuario con este email.');
+    if (!user) {
+      return { success: false, message: 'Error in response body' };
     }
 
-    const userData: any = {
-      email,
-      telephone,
-      firstName,
-      lastName,
-      password,
-      tipoUsuario,
-    };
+    // validar que el usuario no exista en la base de datos
+    const foundUser = await this.searchUserByEmail(user.email);
 
-    // Verifica el tipo de usuario y agrega la relación correspondiente
-    switch (tipoUsuario) {
-      case TipoUsuario.PACIENTE:
-        if (!paciente) throw new Error('Los datos de paciente son requeridos para el tipo de usuario PACIENTE.');
-        userData.paciente = {
-          create: {
-            historialMedico: paciente.historialMedico,
-          },
-        };
-        break;
-
-      case TipoUsuario.MEDICO:
-        if (!medico) throw new Error('Los datos de médico son requeridos para el tipo de usuario MEDICO.');
-        userData.medico = {
-          create: {
-            especialidad: medico.especialidad,
-          },
-        };
-        break;
-
-      case TipoUsuario.ADMINISTRADOR:
-        if (!administrador) throw new Error('Los datos de administrador son requeridos para el tipo de usuario ADMINISTRADOR.');
-        userData.administrador = {
-          create: {
-            departamento: administrador.departamento,
-          },
-        };
-        break;
-
-      default:
-        throw new Error('El tipo de usuario no es válido.');
+    if (foundUser) {
+      return { success: false, message: 'Already registered user' };
     }
 
-    return this.prisma.user.create({
-      data: userData,
-    });
+    const hashedPassword = await this.encryptPassword(user.password, parseInt(process.env.SALT_ROUNDS));
+    
+    const { userType } = user;
+
+    if (userType === UserType.ADMIN) {
+      console.log('Eres un tipo admin', userType);
+
+      if (!user.admin?.department) {
+        console.log(`departament: ${user.admin?.department}`);
+        throw new Error("El departamento del administrador es obligatorio.");
+      }
+
+      const admin = await this.prisma.admin.create({
+        data: {
+          department: user.admin.department,
+          user: {
+            create: {
+              email: user.email,
+              password: hashedPassword,
+              userType: UserType.ADMIN,
+              contact: {
+                create: {
+                  telephone: user.telephone ?? '',
+                  firstName: user.firstName ?? '',
+                  lastName: user.lastName ?? '',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      console.log('Admin created successfully:', admin);
+
+    } else if (userType === UserType.PATIENT) {
+
+      console.log('Eres un tipo paciente', userType);
+
+      const patient = await this.prisma.patient.create({
+        data: {
+          user: {
+            create: {
+              email: user.email,
+              password: hashedPassword,
+              userType: UserType.PATIENT,
+              contact: {
+                create: {
+                  telephone: user.telephone ?? '',
+                  firstName: user.firstName ?? '',
+                  lastName: user.lastName ?? '',
+                },
+              },
+            },
+          },
+        },
+      });
+
+    } else if (userType === UserType.DOCTOR) {
+      console.log('Eres un tipo doctor', userType);
+
+      if (!user.doctor?.specialty) {
+        throw new Error("La especialidad del doctor es obligatoria.");
+      }
+
+      const doctor = await this.prisma.doctor.create({
+        data: {
+          specialty: {
+            create: {
+              name: user.doctor.specialty,
+            }
+          },
+          user: {
+            create: {
+              email: user.email,
+              password: hashedPassword,
+              userType: UserType.DOCTOR,
+              contact: {
+                create: {
+                  telephone: user.telephone ?? '',
+                  firstName: user.firstName ?? '',
+                  lastName: user.lastName ?? '',
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      console.log('Eres un tipo desconocido', userType);
+      return { success: false, message: 'Unknown user type' };
+    }
+
+    return { success: true, message: 'User created successfully.' };
+
   }
 
   findAll() {
@@ -91,5 +136,17 @@ export class UsersService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  private async searchUserByEmail(email: string) {
+    return await this.prisma.user.findUnique({
+      where: {
+        email: email
+      }
+    });
+  }
+
+  private encryptPassword(password: string, salt: number) {
+    return bcrypt.hash(password, salt);
   }
 }

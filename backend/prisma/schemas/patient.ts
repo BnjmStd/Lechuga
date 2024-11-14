@@ -10,7 +10,7 @@ export default async function Pacientes () {
                 create: {
                     email: 'paciente1@example.com',
                     password: 'contraseña2',
-                    userType: 'PACIENTE',
+                    userType: 'PATIENT',
                     contact: {
                         create: {
                             telephone: '321321321',
@@ -46,7 +46,7 @@ export default async function Pacientes () {
                 create: {
                     email: 'paciente2@example.com',
                     password: 'contraseña2',
-                    userType: 'PACIENTE',
+                    userType: 'PATIENT',
                     contact: {
                         create: {
                             telephone: '321321321',

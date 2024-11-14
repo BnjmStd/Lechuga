@@ -2,7 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus, Res, HttpException } from
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiInternalServerErrorResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { SignupDto } from './dto/signup.dto';
 import { Response } from 'express';
 
@@ -16,12 +16,39 @@ export class AuthController {
 
     @Post('login')
     @Public()
+    @ApiOkResponse({
+        description: 'User successfully logged in, token generated.',
+        schema: {
+            example: {
+                success: true,
+                token: 'jwt-token-example',
+            },
+        },
+    })
+    @ApiUnauthorizedResponse({
+        description: 'Unauthorized. Invalid credentials provided.',
+        schema: {
+            example: {
+                success: false,
+                message: 'Invalid credentials',
+            },
+        },
+    })
+    @ApiInternalServerErrorResponse({
+        description: 'Server error occurred during login attempt.',
+        schema: {
+            example: {
+                success: false,
+                message: 'An error occurred while trying to login.',
+            },
+        },
+    })
     async login(@Body() data: LoginDto, @Res() res: Response) {
         try {
 
             const token = await this.authService.validateUser(data);
 
-            if (!token) {
+            if (!token.success) {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
                     message: 'Invalid credentials',
@@ -29,9 +56,9 @@ export class AuthController {
             }
 
             return res.status(HttpStatus.OK).json({
-                success: true,
                 token,
             });
+
 
         } catch (error) {
 
@@ -45,6 +72,34 @@ export class AuthController {
 
     @Post('Singup')
     @Public()
+    @ApiCreatedResponse({
+        description: 'User has been successfully created.',
+        schema: {
+            example: {
+                success: true,
+                message: 'User created successfully.',
+                data: { },
+            },
+        },
+    })
+    @ApiBadRequestResponse({
+        description: 'Bad request. Validation failed or user could not be created.',
+        schema: {
+            example: {
+                success: false,
+                message: 'Validation error message or custom error message from createdUser.',
+            },
+        },
+    })
+    @ApiInternalServerErrorResponse({
+        description: 'Server error occurred while creating the user.',
+        schema: {
+            example: {
+                success: false,
+                message: 'An error occurred while creating the user.',
+            },
+        },
+    })
     async signup(@Body() data: SignupDto, @Res() res: Response) {
         try {
 

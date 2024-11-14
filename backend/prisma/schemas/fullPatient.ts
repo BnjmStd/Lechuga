@@ -10,7 +10,7 @@ export default async function createFullPatient() {
         create: {
           email: 'juan.perez@example.com',
           password: 'securePassword123',
-          userType: 'PACIENTE',
+          userType: 'PATIENT',
           contact: {
             create: {
               firstName: 'Juan',
@@ -105,7 +105,7 @@ export default async function createFullPatient() {
           },
         ],
       },
-      prestaciones: {
+      services: {
         create: [
           {
             service: {
