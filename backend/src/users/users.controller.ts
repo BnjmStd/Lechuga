@@ -9,7 +9,8 @@ import {
   UseGuards,
   Req,
   Res,
-  HttpStatus
+  HttpStatus,
+  Query
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -54,7 +55,7 @@ export class UsersController {
     } catch (error) {
 
       console.log('Error al crear el usuario', error);
-      
+
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'An error occurred while trying to login.',
@@ -67,9 +68,23 @@ export class UsersController {
   @UseGuards(
     JwtAuthGuard
   )
-  async findAll(@Req() req: AuthenticatedRequest) {
-    req.user
-    return this.usersService.findAll();
+  async findAll(
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+    @Query('term') term: string = '',
+    @Query('page') page: string = '1',
+    @Query('pageSize') pageSize: string = '10',
+  ) {
+    try {
+      req.user
+      return this.usersService.findAll();
+    } catch (error) {
+
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'An error occurred while trying to login.',
+      });
+    }
   }
 
   @Get(':id')
